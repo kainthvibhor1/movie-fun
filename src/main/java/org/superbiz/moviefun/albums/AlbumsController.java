@@ -17,10 +17,10 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.lang.ClassLoader.getSystemResource;
 import static java.lang.String.format;
-import static java.nio.file.Files.readAllBytes;
 
 @Controller
 @RequestMapping("/albums")
@@ -50,17 +50,28 @@ public class AlbumsController {
 
     @PostMapping("/{albumId}/cover")
     public String uploadCover(@PathVariable long albumId, @RequestParam("file") MultipartFile uploadedFile) throws IOException {
-        Blob inputBlob = new Blob(uploadedFile.getName(), uploadedFile.getInputStream(), uploadedFile.getContentType());
-//        saveUploadToFile(uploadedFile, getCoverFile(albumId));
+        Blob inputBlob = new Blob(Long.toString(albumId),
+                uploadedFile.getInputStream(),
+                uploadedFile.getContentType());
         this.store.put(inputBlob);
         return format("redirect:/albums/%d", albumId);
     }
 
     @GetMapping("/{albumId}/cover")
     public HttpEntity<byte[]> getCover(@PathVariable long albumId) throws IOException, URISyntaxException {
-        Path coverFilePath = getExistingCoverPath(albumId);
-        byte[] imageBytes = readAllBytes(coverFilePath);
-        HttpHeaders headers = createImageHttpHeaders(coverFilePath, imageBytes);
+        Optional<Blob> blobOptional = this.store.get(Long.toString(albumId));
+        if (!blobOptional.isPresent()) {
+            return new HttpEntity<>(new byte[1], new HttpHeaders());
+        }
+        System.out.println("HERE HERE HERE");
+        Blob blob = blobOptional.get();
+        System.out.println(blob.name);
+        byte[] imageBytes = new byte[blob.inputStream.available()];
+        blob.inputStream.read(imageBytes);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(blob.contentType));
+        headers.setContentLength(imageBytes.length);
 
         return new HttpEntity<>(imageBytes, headers);
     }
