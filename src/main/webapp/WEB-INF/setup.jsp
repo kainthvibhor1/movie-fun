@@ -84,23 +84,13 @@
       <td><b>Director</b></td>
       <td><b>Genre</b></td>
     </tr>
-    <%
-      List<Movie> movies = moviesBean.getMovies();
-      for (Iterator<Movie> iterator = movies.iterator(); iterator.hasNext(); ) {
-        Movie movie = (Movie) iterator.next();
-    %>
-    <tr>
-      <td><%=movie.getTitle()%>
-      </td>
-      <td><%=movie.getDirector()%>
-      </td>
-      <td><%=movie.getGenre()%>
-      </td>
-    </tr>
-
-    <%
-      }
-    %>
+    <c:forEach items="${requestScope.movies}" var="movie">
+      <tr>
+        <td>${ movie.title }</td>
+        <td>${ movie.director }</td>
+        <td>${ movie.genre }</td>
+      </tr>
+    </c:forEach>
   </table>
 
   <h2>Continue</h2>
