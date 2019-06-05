@@ -28,7 +28,7 @@ import java.util.List;
 @Repository
 public class MoviesBean {
 
-    @PersistenceContext(unitName = "movie-unit")
+    @PersistenceContext
     private EntityManager entityManager;
 
     public Movie find(Long id) {
