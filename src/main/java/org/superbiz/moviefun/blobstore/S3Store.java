@@ -1,6 +1,7 @@
 package org.superbiz.moviefun.blobstore;
 
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
 
@@ -26,14 +27,19 @@ public class S3Store implements BlobStore {
 
     @Override
     public Optional<Blob> get(String name) throws IOException {
-        S3Object object = client.getObject(this.photBucket, name);
-        if (object != null) {
-            ObjectMetadata meta = object.getObjectMetadata();
-            Blob found = new Blob(name, object.getObjectContent(), meta.getContentType());
-            System.out.println(meta.getContentLength());
-            return Optional.of(found);
+        try {
+            S3Object object = client.getObject(this.photBucket, name);
+            if (object != null) {
+                ObjectMetadata meta = object.getObjectMetadata();
+                Blob found = new Blob(name, object.getObjectContent(), meta.getContentType());
+                System.out.println(meta.getContentLength());
+                return Optional.of(found);
+            }
+            return Optional.empty();
+        } catch (AmazonS3Exception e) {
+            System.out.println("Not Found");
+            return Optional.empty();
         }
-        return Optional.empty();
     }
 
     @Override
