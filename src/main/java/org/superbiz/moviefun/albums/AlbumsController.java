@@ -1,6 +1,7 @@
 package org.superbiz.moviefun.albums;
 
 import org.apache.tika.Tika;
+import org.apache.tika.io.IOUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -63,11 +64,8 @@ public class AlbumsController {
         if (!blobOptional.isPresent()) {
             return new HttpEntity<>(new byte[1], new HttpHeaders());
         }
-        System.out.println("HERE HERE HERE");
         Blob blob = blobOptional.get();
-        System.out.println(blob.name);
-        byte[] imageBytes = new byte[blob.inputStream.available()];
-        blob.inputStream.read(imageBytes);
+        byte[] imageBytes = IOUtils.toByteArray(blob.inputStream);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(blob.contentType));

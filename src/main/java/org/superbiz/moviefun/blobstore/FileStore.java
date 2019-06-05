@@ -79,6 +79,7 @@ public class FileStore implements BlobStore {
                     return fName;
                 }
             }
+            return null;
         }
         return null;
     }
