@@ -10,25 +10,25 @@ import java.util.Optional;
 
 public class S3Store implements BlobStore {
 
-    private String photBucket;
+    private String photoBucket;
     private AmazonS3Client client;
 
     public S3Store(AmazonS3Client s3Client, String photoStorageBucket) {
         this.client = s3Client;
-        this.photBucket = photoStorageBucket;
+        this.photoBucket = photoStorageBucket;
     }
 
     @Override
     public void put(Blob blob) throws IOException {
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentType(blob.contentType);
-        client.putObject(this.photBucket, blob.name, blob.inputStream, metadata);
+        client.putObject(this.photoBucket, blob.name, blob.inputStream, metadata);
     }
 
     @Override
     public Optional<Blob> get(String name) throws IOException {
         try {
-            S3Object object = client.getObject(this.photBucket, name);
+            S3Object object = client.getObject(this.photoBucket, name);
             if (object != null) {
                 ObjectMetadata meta = object.getObjectMetadata();
                 Blob found = new Blob(name, object.getObjectContent(), meta.getContentType());
