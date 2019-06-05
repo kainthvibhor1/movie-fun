@@ -7,6 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.superbiz.moviefun.blobstore.Blob;
+import org.superbiz.moviefun.blobstore.BlobStore;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,8 +27,11 @@ import static java.nio.file.Files.readAllBytes;
 public class AlbumsController {
 
     private final AlbumsBean albumsBean;
+    private BlobStore store;
 
-    public AlbumsController(AlbumsBean albumsBean) {
+
+    public AlbumsController(AlbumsBean albumsBean, BlobStore store) {
+        this.store = store;
         this.albumsBean = albumsBean;
     }
 
@@ -45,8 +50,9 @@ public class AlbumsController {
 
     @PostMapping("/{albumId}/cover")
     public String uploadCover(@PathVariable long albumId, @RequestParam("file") MultipartFile uploadedFile) throws IOException {
-        saveUploadToFile(uploadedFile, getCoverFile(albumId));
-
+        Blob inputBlob = new Blob(uploadedFile.getName(), uploadedFile.getInputStream(), uploadedFile.getContentType());
+//        saveUploadToFile(uploadedFile, getCoverFile(albumId));
+        this.store.put(inputBlob);
         return format("redirect:/albums/%d", albumId);
     }
 
