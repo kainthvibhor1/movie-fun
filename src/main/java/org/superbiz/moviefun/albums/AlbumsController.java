@@ -1,6 +1,5 @@
 package org.superbiz.moviefun.albums;
 
-import org.apache.tika.Tika;
 import org.apache.tika.io.IOUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -11,16 +10,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.superbiz.moviefun.blobstore.Blob;
 import org.superbiz.moviefun.blobstore.BlobStore;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
-import static java.lang.ClassLoader.getSystemResource;
 import static java.lang.String.format;
 
 @Controller
@@ -30,12 +25,10 @@ public class AlbumsController {
     private final AlbumsBean albumsBean;
     private BlobStore store;
 
-
     public AlbumsController(AlbumsBean albumsBean, BlobStore store) {
         this.store = store;
         this.albumsBean = albumsBean;
     }
-
 
     @GetMapping
     public String index(Map<String, Object> model) {
@@ -51,7 +44,7 @@ public class AlbumsController {
 
     @PostMapping("/{albumId}/cover")
     public String uploadCover(@PathVariable long albumId, @RequestParam("file") MultipartFile uploadedFile) throws IOException {
-        Blob inputBlob = new Blob(format("covers/%d", albumId),
+        Blob inputBlob = new Blob(formatBlobName(albumId),
                 uploadedFile.getInputStream(),
                 uploadedFile.getContentType());
         this.store.put(inputBlob);
@@ -60,9 +53,9 @@ public class AlbumsController {
 
     @GetMapping("/{albumId}/cover")
     public HttpEntity<byte[]> getCover(@PathVariable long albumId) throws IOException, URISyntaxException {
-        Optional<Blob> blobOptional = this.store.get(format("covers/%d", albumId));
+        Optional<Blob> blobOptional = this.store.get(formatBlobName(albumId));
         if (!blobOptional.isPresent()) {
-            return new HttpEntity<>(new byte[1], new HttpHeaders());
+            blobOptional = this.getDefaultBlob();
         }
         Blob blob = blobOptional.get();
         byte[] imageBytes = IOUtils.toByteArray(blob.inputStream);
@@ -74,41 +67,14 @@ public class AlbumsController {
         return new HttpEntity<>(imageBytes, headers);
     }
 
-
-    private void saveUploadToFile(@RequestParam("file") MultipartFile uploadedFile, File targetFile) throws IOException {
-        targetFile.delete();
-        targetFile.getParentFile().mkdirs();
-        targetFile.createNewFile();
-
-        try (FileOutputStream outputStream = new FileOutputStream(targetFile)) {
-            outputStream.write(uploadedFile.getBytes());
-        }
+    private Optional<Blob> getDefaultBlob() {
+        ClassLoader loader = AlbumsController.class.getClassLoader();
+        InputStream stream = loader.getResourceAsStream("default-cover.jpg");
+        Blob defaultVal = new Blob("cover/default-cover", stream, MediaType.IMAGE_JPEG_VALUE);
+        return Optional.of(defaultVal);
     }
 
-    private HttpHeaders createImageHttpHeaders(Path coverFilePath, byte[] imageBytes) throws IOException {
-        String contentType = new Tika().detect(coverFilePath);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType(contentType));
-        headers.setContentLength(imageBytes.length);
-        return headers;
-    }
-
-    private File getCoverFile(@PathVariable long albumId) {
-        String coverFileName = format("covers/%d", albumId);
-        return new File(coverFileName);
-    }
-
-    private Path getExistingCoverPath(@PathVariable long albumId) throws URISyntaxException {
-        File coverFile = getCoverFile(albumId);
-        Path coverFilePath;
-
-        if (coverFile.exists()) {
-            coverFilePath = coverFile.toPath();
-        } else {
-            coverFilePath = Paths.get(getSystemResource("default-cover.jpg").toURI());
-        }
-
-        return coverFilePath;
+    private String formatBlobName(Long albumId) {
+        return format("covers/%d", albumId);
     }
 }
