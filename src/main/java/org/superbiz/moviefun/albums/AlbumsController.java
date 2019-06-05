@@ -51,7 +51,7 @@ public class AlbumsController {
 
     @PostMapping("/{albumId}/cover")
     public String uploadCover(@PathVariable long albumId, @RequestParam("file") MultipartFile uploadedFile) throws IOException {
-        Blob inputBlob = new Blob(Long.toString(albumId),
+        Blob inputBlob = new Blob(format("covers/%d", albumId),
                 uploadedFile.getInputStream(),
                 uploadedFile.getContentType());
         this.store.put(inputBlob);
@@ -60,7 +60,7 @@ public class AlbumsController {
 
     @GetMapping("/{albumId}/cover")
     public HttpEntity<byte[]> getCover(@PathVariable long albumId) throws IOException, URISyntaxException {
-        Optional<Blob> blobOptional = this.store.get(Long.toString(albumId));
+        Optional<Blob> blobOptional = this.store.get(format("covers/%d", albumId));
         if (!blobOptional.isPresent()) {
             return new HttpEntity<>(new byte[1], new HttpHeaders());
         }
